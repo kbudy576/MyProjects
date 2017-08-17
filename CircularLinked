@@ -1,0 +1,433 @@
+/************************************************************************/
+/*    Author:        Kyle Budynkiewcz		                   	*/	
+/*    Course:        CSC237                                        	*/
+/*    Filename:      p2.cpp                                         	*/
+/*    Purpose:       This program uses a .h to create a circular linked list.
+                     The last node should always point to the first.
+		     Involves Implemenation of the big 3, pointers , and nodes*/
+/*		                                  */         
+/***************************************************************************/
+
+#include<iostream>
+#include<sstream>
+#include<fstream>
+#include<iomanip>
+#include<string>
+#include<list>
+#include<assert.h>
+
+using namespace std;
+#ifndef _CLinkedList_
+#define _CLinkedList_
+
+// Need to prototype template classes if they are to be friends
+template <typename eltType> class CLinkedList;
+template <typename eltType> class ClistIter;
+
+/*****************************************************************/
+  /*    Class name:   node                                      */
+  /*                                                               */
+  /*    Description:     node class is used when creating inserting 
+				 or deleting nodes from a list  
+  /*                                                               */
+  /*    Parameters:      data - the info in node
+			 next - pointer to next node          
+  /*    Return Value:                                          */
+  /*****************************************************************/
+template <typename eltType> class node
+{	private:
+		node(eltType info= 0, node* link = NULL ) : 
+			data(info), next(link) {};
+		eltType data;
+		node*	next;
+		
+	friend class CLinkedList<eltType>;
+	friend class ClistIter<eltType>;
+};
+/////////////////////
+//////Clinked List Headers
+/////////////////////
+template <typename eltType> class CLinkedList
+{
+	public:
+		
+  /*****************************************************************/
+  /*    Function name:  1) Constructor and the Big 3
+  /*                                                              
+  /*    Description:     1: Creates class CLinkedList   
+  /*                     CC: Construct deep copy of another CLinkedList
+                         Destuctor: uses a destroy function to destroy the list
+						 operator = : assigns anothe CLinkedList to this CLinkedList
+									  creating deep copy
+  /*    Parameters:      n/a                                              
+  /*    Return Value:    0                                      
+  /*****************************************************************/
+		CLinkedList();
+		
+		CLinkedList(CLinkedList&);
+		~CLinkedList();
+		CLinkedList& operator=(const CLinkedList&);
+		
+		//void print();
+/*****************************************************************/
+/*    Function name:   reprint | recPrint
+/*    Description:     reprint and recPrint are the recursive way of
+                       printing the list backward 
+/*                    
+/*    Parameters:      pointer to node class 
+                       none
+/*    Return Value:
+/*****************************************************************/
+		void reprint(node<eltType>* p);
+		void recPrint();
+/*****************************************************************/
+/*    Function name:   orderedInsert   |    remove                             
+/*    Description:     Takes newnodes and puts them in list in numeral order	 
+/*                     Deletes node specified then connects list again 
+/*    Parameters:      eltType for both                                       
+/*    Return Value:                                          
+/*****************************************************************/ 
+		void orderedInsert(eltType);
+		void remove(eltType);
+
+	private:
+		//linked list pointer
+		node<eltType>* last;
+				
+/*****************************************************************/
+/*    Function name:   copy | destroy                                      
+/*                                                               
+/*    Description:     Both are helper functions, copy creats the deep copy
+					   of the copy constructor. Destroy destroys/frees
+					   the nodes for the destructor*                              
+/*    Parameters:      pointer of node class       
+/*    Return Value:                                         
+/*****************************************************************/ 
+		node<eltType>*	copy(node<eltType> *);
+		void	destroy(node<eltType> *);
+				
+	friend class ClistIter<eltType>;
+};
+
+template <typename eltType>
+	ostream& operator<<(ostream &os,const CLinkedList<eltType> &l);
+ 
+////////////////////////////
+/////////////Iterator Class
+/////////CListIter header
+///////////////////////
+template <typename eltType> class ClistIter
+{
+	public:
+  /*****************************************************************/
+  /*    Function name:   ClistIter
+  /*                                                              
+  /*    Description:     Creates class CLinkedList   
+  /*          
+  /*    Parameters:      const CLinkedList<eltType> &l                   
+  /*    Return Value:                                          
+  /*****************************************************************/
+		ClistIter(const CLinkedList<eltType> &l);
+		
+		
+  /*****************************************************************/
+  /*    Function name:   begin
+  /*                                                              
+  /*    Description:     sets the iterator to the first node of the LinkedList
+	  		 or NULL if empty   
+  /*          
+  /*    Parameters:                                                             
+  /*    Return Value:                                          
+  /*****************************************************************/
+		void begin();
+		
+  /*****************************************************************/
+  /*    Function name:   isEmpty
+  /*                                                              
+  /*    Description:     is the list empty or not  
+  /*    Parameters:                                                                  /*    Return Value:     boolean                                     
+  /*****************************************************************/
+		bool isEmpty();
+
+  /*****************************************************************/
+  /*    Function name:   isFirstNode  | isLastNode
+  /*                                                              
+  /*    Description:     is it the first node in the list |helper pointer 
+			 is it the last node in the list |last pointer
+  /*    Parameters:      
+  /*    Return Value:   boolean                                       
+  /*****************************************************************/
+		bool isFirstNode(); 
+		bool isLastNode();
+
+  /*****************************************************************/
+  /*    Function name:   * const  | *
+  /*                                                              
+  /*    Description:     returns data that must be constant for node iteration 
+   		          non const for manipulation of node
+  /*    Parameters:                                                                  /*    Return Value:                                          
+  /*****************************************************************/
+		int& operator*();
+		const int operator*(int) const;
+		
+		//advances pointer to next node in the list if ther is one
+  /*****************************************************************/
+  /*    Function name:   ++(int)  | ++
+  /*                                                              
+  /*    Description:     advance pointer to next node in list one for 
+                         left side one for right
+  /*    Parameters:                                                       
+  /*    Return Value:                                          
+  /*****************************************************************/
+		ClistIter<eltType>& operator++();
+		ClistIter<eltType> operator++(int);
+	
+	private:
+		const CLinkedList<eltType> &itr;
+		node<eltType> *curr;
+};
+
+////////////////////////////////////////////////
+////////////CLinkedList Implementation////
+/////////////////////////////////////////////
+
+// Construct empty LinkedList
+template <typename eltType> CLinkedList<eltType>::CLinkedList() : last(NULL)
+{}
+
+// Copy constructor. copy() does the deep copy
+template <typename eltType> 
+	CLinkedList<eltType>::CLinkedList(CLinkedList<eltType> &cl)
+{last = copy( cl.last );}
+
+
+// Free all nodes
+template <typename eltType> CLinkedList<eltType>::~CLinkedList()
+{destroy(last);}
+
+// The deep copy. Copy the source list l, one node at a time
+template <typename eltType> 
+	node<eltType>* CLinkedList<eltType>::copy(node<eltType> *l)
+{	node<eltType>* first = NULL;	// ptr to beginning of copied LinkedList
+	node<eltType>* last = NULL;	// ptr to last item insert in the copy
+	if (l != NULL)
+	{	assert((first=last=new node<eltType>(l->data,NULL)) != NULL);
+		for (node<eltType>* source=l->next;source!=NULL;
+					source=source->next,last=last->next)
+		{	last->next = new node<eltType>(source->data,NULL);
+			assert(last->next);
+		}
+	}
+	return first;
+}
+// l is temp -> next temp is doomed
+template <typename eltType> void CLinkedList<eltType>::destroy(node<eltType> *l)
+{	while (l -> next -> data != l -> next -> data)	
+	{	node<eltType> *doomed = l;
+		l = l->next;
+		delete doomed;
+	}
+}
+// Assignment operator: copy() does the deep copy
+template <typename eltType> CLinkedList<eltType> 
+	&CLinkedList<eltType>::operator=(const CLinkedList<eltType>& cl)
+{	if (this != &cl)
+	{	destroy(last);
+		last = copy(cl.last);
+	}
+	return *this;
+}
+
+
+//Kyle's biggest contribution
+//This is the order function. This is how each node will be added to the list.
+//If the node will be added to beginning, middle, or end.
+//Comments in code help put english to each snippet.
+template <typename eltType> void CLinkedList<eltType>::orderedInsert(eltType x)
+{
+	  node<eltType>* p = last;
+	  node<eltType>* prev = NULL;
+	  bool oneNode = true;
+	  bool newLast = false;
+	  
+	  if(last == NULL) {
+	    //cout << "We are in the first condition nothing in the list x: " << x << endl;
+	    last = new node<eltType>(x,last); //creates new node * to last
+	    last->next = last; 
+	  }		
+	  else{
+	    //cout << "We are in the 3rd condition should be 2 items in the list" << endl;
+	    do{
+	      prev = p;
+	      p = p -> next;
+	      if(x <= p -> data && x >= prev -> data){ 
+	      //cout << "We hit the first if x: " << x << " is less than p -> data: " << p -> data << "and greater then prev -> data: " << prev -> data << endl;
+		oneNode= false;
+		break;
+	      }
+	      if(x > last -> data){ 
+		newLast = true;
+		oneNode = false;
+		break;
+	      }
+	      if((prev -> data > p -> data) && (x < p -> data || x > prev -> data)){ 
+		//cout << "We hit the second if prev, -> data: " << prev -> data << " is greater then p -> data: " << p -> data << " and x: " << x << " is less than p -> data: " << p -> data << " or x is greater then prev -> data: " << prev -> data << endl; 
+		oneNode = false;
+		break;
+	      }
+	    }while(p != last);
+	    if(p -> data < x && (prev == last) && oneNode == true){
+	      
+	      //cout << "p -> data : " << p -> data << " is less than x: " << x << endl;
+	      node<eltType>* newNode = new node<eltType>(x,last);
+	      last = newNode;
+	      last -> next = p;
+	      prev -> next = last;
+	    }
+	    else if(p -> data > x && (prev == last) && oneNode == true){
+	      //cout << "p -> data : " << p -> data << " is greater than x: " << x << endl;
+	      node<eltType>* newNode = new node<eltType>(x,p);
+	      last -> next = newNode;
+	      //cout << "last -> data: " << last -> data << endl;
+	    } 
+	    else{
+	      //cout << x << " is x. p is: " << p -> data << " . last -> data: " << last -> data << endl;
+	      node<eltType>* newNode = new node<eltType>(x,p);
+	      prev -> next = newNode;
+	      if(newLast){				
+		last = newNode;
+		//	cout << "new last: " << last -> data << endl;
+	      }  
+	    }
+	  }
+}
+/* template <typename eltType>
+	void CLinkedList<eltType>::print()
+	{	
+	 	if(last != last -> next)
+		{
+		node<eltType>* ptr = last -> next;
+		do{
+			cout << ptr -> data << " ";
+			ptr = ptr -> next;
+		}while(ptr != last);
+	
+	
+		}cout << last -> data << " " <<endl;
+	} */	
+	
+template <typename eltType> void CLinkedList<eltType>::reprint(node<eltType>* p)
+{
+	 if(p == last)
+	   {
+	     cout << p->data  << " ";
+	     return;
+	   }
+	 reprint(p->next);
+	 cout << p->data  << " ";
+	 
+		
+}
+template <typename eltType> void CLinkedList<eltType>::recPrint()
+{
+         reprint(last -> next);
+}
+template <typename eltType> void CLinkedList<eltType>::remove(eltType x)
+{
+        node<eltType>* p = last;
+	node<eltType>* trailp = NULL;
+	while (p != NULL && p->data != x )
+	{	trailp = p;
+		p = p->next;
+	}
+	assert(p != NULL);
+	if (p == last){
+		last = last->next;
+	}
+	else{
+		trailp->next = p->next;
+	}		
+	delete p;
+}
+
+// Output a linked list, using a list iterator
+//buunch of errors before 
+//changing os* to os and significantly less.
+//lt iterator object and l is reference to the list object
+template <typename eltType> 
+	ostream& operator<<(ostream &os,const CLinkedList<eltType> &l)
+{	 
+	ClistIter<int> lt(l);
+	lt.begin();
+	//int firstNodeCounter = 0;
+	bool doneLoop = false;
+	while(!doneLoop){
+	  os << *lt << " ";
+		
+	  if(lt.isLastNode()){
+	    doneLoop = true;	
+	  }
+	  lt++;
+	} 
+	os << endl;
+	return os; 
+}  
+
+/////////////////////////////////////////////
+////////////////  CListIter     ///////////
+//////////	Implementation		/////////
+////////////////////////////////////
+
+// Construct a list iterator. It consists of:
+//	 a reference to a linked list object
+//	 a pointer to the actual list, initially pointing to last
+template <typename eltType> 
+ClistIter<eltType>::ClistIter(const CLinkedList<eltType> &l): itr(l),curr(l.last) 
+{} 
+//sets the iterator to the first node of the cLinkedList
+//or NULL if empty
+template <typename eltType> void ClistIter<eltType>::begin()
+{
+	if(isEmpty())
+	{
+		curr = NULL;
+	}
+	else
+	curr = itr.last -> next;
+}
+//Using inline because Compiler replaces the definition of inline 
+//functions at compile time instead of referring function definition 
+//at runtime.
+template <typename eltType> inline bool ClistIter<eltType>::isEmpty()
+{return (curr == NULL);}
+
+template <typename eltType> bool ClistIter<eltType>::isFirstNode()
+{	
+	return curr == itr.last -> next;
+}
+template <typename eltType> bool ClistIter<eltType>::isLastNode()
+{
+	return curr == itr.last;
+}
+template <typename eltType> int &ClistIter<eltType>::operator*()
+{
+	return curr -> data;
+}
+template <typename eltType> const int ClistIter<eltType>::operator*(int) const
+{
+	return curr -> data; 
+}  
+template <typename eltType> ClistIter<eltType> &ClistIter<eltType>::operator++()
+{
+	curr = curr -> next;
+	return itr;
+		
+}
+//returns an actual LinkedListIterator object
+// and not an object reference as with the preincrement operator.
+template <typename eltType> ClistIter<eltType> ClistIter<eltType>::operator++(int)
+{
+        curr = curr -> next;
+	return itr;
+}
+#endif
